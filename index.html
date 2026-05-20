@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ ESCAPE ROOM — Elektrizitatea · Don Bosco LHII</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&display=swap');
+
+:root {
+  --bg:      #04090f;
+  --panel:   #080f1a;
+  --glass:   rgba(0,180,255,0.05);
+  --border:  #0a2a3a;
+  --glow:    #00e5ff;
+  --yellow:  #ffe033;
+  --orange:  #ff8c00;
+  --green:   #39ff6e;
+  --red:     #ff3333;
+  --white:   #d0eeff;
+  --muted:   #2a5a7a;
+  --danger:  #ff2222;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+body{
+  font-family:'Exo 2',sans-serif;
+  background:var(--bg);
+  color:var(--white);
+  height:100vh; width:100vw;
+  overflow:hidden;
+  cursor:none;
+}
+
+/* ── CURSOR ── */
+#cur{
+  position:fixed;pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  font-size:20px;
+  filter:drop-shadow(0 0 8px var(--yellow));
+  animation:curPulse 1s ease-in-out infinite;
+  transition:transform .08s;
+}
+@keyframes curPulse{0%,100%{filter:drop-shadow(0 0 6px var(--yellow));}50%{filter:drop-shadow(0 0 18px var(--yellow)) brightness(1.5);}}
+
+/* ── ANIMATED BG — circuit grid ── */
+#bg-canvas{position:fixed;inset:0;z-index:0;opacity:.5;}
+
+/* ── SCREENS ── */
+.screen{
+  position:absolute;inset:0;z-index:2;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  transition:opacity .5s,transform .5s;
+}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.97);}
+
+/* ══════════════════════
+   INTRO SCREEN
+══════════════════════ */
+#s-intro{ gap:28px; }
+
+.intro-logo{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1.8rem,5vw,3.2rem);
+  font-weight:900;
+  color:var(--yellow);
+  text-shadow:0 0 20px var(--yellow),0 0 60px #ff8c0066;
+  letter-spacing:6px;
+  text-align:center;
+  animation:flicker 6s infinite;
+}
+@keyframes flicker{
+  0%,92%,100%{opacity:1;}
+  93%{opacity:.6;}94%{opacity:1;}97%{opacity:.4;}98%{opacity:1;}
+}
+.intro-sub{
+  font-family:'Share Tech Mono',monospace;
+  color:var(--glow);letter-spacing:4px;
+  font-size:clamp(.75rem,1.4vw,.95rem);
+  text-align:center;
+  animation:scanline 3s ease-in-out infinite;
+}
+@keyframes scanline{0%,100%{opacity:.7;}50%{opacity:1;}}
+
+.intro-card{
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-left:3px solid var(--glow);
+  border-radius:12px;
+  padding:22px 32px;
+  max-width:560px;
+  text-align:center;
+  font-size:clamp(.88rem,1.5vw,1rem);
+  line-height:1.8;
+  color:#8ab8cc;
+  backdrop-filter:blur(6px);
+}
+.intro-card b{color:var(--yellow);}
+
+.rules-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:12px;max-width:600px;width:92%;
+}
+.rule-box{
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px 12px;
+  text-align:center;
+  font-size:.82rem;
+  color:#8ab8cc;
+  line-height:1.5;
+}
+.rule-box .ri{font-size:1.6rem;display:block;margin-bottom:6px;}
+.rule-box b{color:var(--white);display:block;margin-bottom:4px;}
+
+#btn-enter{
+  background:transparent;
+  border:2px solid var(--yellow);
+  color:var(--yellow);
+  font-family:'Orbitron',monospace;
+  font-size:1.1rem;
+  padding:14px 52px;
+  border-radius:4px;
+  cursor:pointer;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  position:relative;
+  overflow:hidden;
+  transition:all .2s;
+}
+#btn-enter::before{
+  content:'';position:absolute;inset:0;
+  background:var(--yellow);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .25s ease;z-index:-1;
+}
+#btn-enter:hover::before{transform:scaleX(1);}
+#btn-enter:hover{color:var(--bg);box-shadow:0 0 30px var(--yellow);}
+
+/* ══════════════════════
+   GAME SCREEN
+══════════════════════ */
+#s-game{justify-content:flex-start;}
+
+/* ── TOP HUD ── */
+#hud{
+  width:100%;flex-shrink:0;
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  padding:10px 20px;
+  background:rgba(4,9,15,.92);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(8px);
+  gap:12px;
+}
+.hud-left{display:flex;align-items:center;gap:14px;}
+.hud-room{
+  font-family:'Orbitron',monospace;
+  font-size:.85rem;color:var(--glow);
+  letter-spacing:2px;
+}
+.hud-errors{display:flex;gap:5px;}
+.err-dot{
+  width:14px;height:14px;border-radius:50%;
+  background:var(--red);
+  box-shadow:0 0 8px var(--red);
+  transition:all .3s;
+}
+.err-dot.used{background:#1a0000;box-shadow:none;}
+
+.hud-center{text-align:center;}
+#timer-display{
+  font-family:'Share Tech Mono',monospace;
+  font-size:2rem;
+  color:var(--yellow);
+  text-shadow:0 0 16px var(--yellow);
+  letter-spacing:4px;
+}
+#timer-display.danger{
+  color:var(--red);
+  text-shadow:0 0 20px var(--red);
+  animation:timerDanger .5s infinite;
+}
+@keyframes timerDanger{0%,100%{opacity:1;}50%{opacity:.5;}}
+
+.hud-right{display:flex;justify-content:flex-end;align-items:center;gap:10px;}
+.hud-pts{
+  font-family:'Orbitron',monospace;
+  font-size:1.4rem;
+  color:var(--yellow);
+  text-shadow:0 0 10px var(--yellow);
+}
+.hud-pts small{font-size:.65rem;color:var(--muted);font-family:'Exo 2',sans-serif;margin-right:4px;}
+
+/* ── ROOM PROGRESS BAR ── */
+#room-progress{
+  width:100%;height:3px;flex-shrink:0;
+  background:var(--border);
+}
+#room-progress-bar{
+  height:100%;background:var(--glow);
+  box-shadow:0 0 8px var(--glow);
+  transition:width .6s ease;
+}
+
+/* ── GAME AREA ── */
+#game-area{
+  flex:1;width:100%;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;padding:8px;
+}
+
+/* ── QUESTION CARD ── */
+.q-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-top:3px solid var(--glow);
+  border-radius:16px;
+  padding:24px 28px;
+  max-width:720px;width:100%;
+  display:flex;flex-direction:column;
+  gap:18px;
+  box-shadow:0 0 40px rgba(0,229,255,.05),inset 0 0 30px rgba(0,0,0,.3);
+  animation:cardIn .35s ease;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+.q-header{
+  display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid var(--border);
+  padding-bottom:14px;
+}
+.q-room-icon{font-size:2.2rem;}
+.q-room-name{
+  font-family:'Orbitron',monospace;
+  font-size:.8rem;color:var(--glow);letter-spacing:3px;
+}
+.q-num{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.75rem;color:var(--muted);margin-top:2px;
+}
+
+.q-text{
+  font-size:clamp(.95rem,1.8vw,1.1rem);
+  line-height:1.75;color:var(--white);
+}
+.q-text b{color:var(--yellow);}
+
+/* formula chip */
+.q-formula{
+  background:rgba(0,229,255,.07);
+  border:1px solid rgba(0,229,255,.2);
+  border-radius:8px;
+  padding:10px 18px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:1.1rem;
+  color:var(--glow);
+  text-align:center;
+  letter-spacing:3px;
+}
+
+/* circuit visual */
+.q-circuit{
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;flex-wrap:wrap;
+}
+.c-node{
+  background:rgba(0,229,255,.06);
+  border:1px solid rgba(0,229,255,.18);
+  border-radius:8px;
+  padding:8px 12px;
+  font-size:.85rem;
+  text-align:center;
+  white-space:nowrap;
+}
+.c-arrow{color:var(--muted);font-size:1.2rem;}
+
+/* options */
+.q-options{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.q-opt{
+  background:rgba(255,255,255,.03);
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  color:var(--white);
+  cursor:pointer;
+  font-family:'Exo 2',sans-serif;
+  font-size:.92rem;
+  text-align:left;
+  transition:all .18s;
+  display:flex;align-items:center;gap:10px;
+}
+.q-opt:hover{
+  border-color:var(--glow);
+  background:rgba(0,229,255,.07);
+  transform:translateX(3px);
+}
+.q-opt .opt-key{
+  font-family:'Orbitron',monospace;
+  font-size:.75rem;color:var(--muted);
+  min-width:20px;
+}
+.q-opt.correct{border-color:var(--green);background:rgba(57,255,110,.08);color:var(--green);}
+.q-opt.wrong{border-color:var(--red);background:rgba(255,51,51,.07);color:var(--red);}
+
+/* feedback */
+.q-feedback{
+  font-size:.9rem;line-height:1.6;
+  padding:10px 14px;
+  border-radius:8px;
+  min-height:2rem;
+  display:none;
+}
+.q-feedback.show{display:block;}
+.q-feedback.ok{background:rgba(57,255,110,.07);border-left:3px solid var(--green);color:#a0ffb8;}
+.q-feedback.err{background:rgba(255,51,51,.07);border-left:3px solid var(--red);color:#ffaaaa;}
+
+/* ── ROOM TRANSITION ── */
+#room-transition{
+  position:fixed;inset:0;z-index:50;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:20px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .4s;
+}
+#room-transition.show{opacity:1;pointer-events:all;}
+.rt-icon{font-size:4rem;animation:rtSpin .8s ease-out;}
+@keyframes rtSpin{from{transform:scale(0) rotate(-180deg);}to{transform:scale(1) rotate(0deg);}}
+.rt-title{
+  font-family:'Orbitron',monospace;font-size:1.8rem;
+  color:var(--green);text-shadow:0 0 20px var(--green);text-align:center;
+}
+.rt-sub{font-size:1rem;color:var(--muted);text-align:center;}
+.rt-pts{font-family:'Orbitron',monospace;font-size:2.5rem;color:var(--yellow);}
+
+/* ── FAIL OVERLAY ── */
+#fail-overlay{
+  position:fixed;inset:0;z-index:60;
+  background:rgba(4,0,0,.96);
+  display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;
+  backdrop-filter:blur(8px);
+}
+.fail-title{
+  font-family:'Orbitron',monospace;font-size:2.5rem;
+  color:var(--red);text-shadow:0 0 30px var(--red);
+  text-align:center;animation:failPulse .8s infinite;
+}
+@keyframes failPulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+.fail-sub{font-size:1rem;color:#aa6666;text-align:center;max-width:400px;line-height:1.6;}
+.fail-room{font-family:'Share Tech Mono',monospace;color:var(--muted);font-size:.9rem;}
+.fail-btns{display:flex;gap:14px;margin-top:10px;}
+.fail-btn{
+  border:none;border-radius:6px;cursor:pointer;
+  font-family:'Orbitron',monospace;font-size:.9rem;
+  padding:12px 28px;letter-spacing:2px;
+  transition:transform .15s,box-shadow .15s;
+}
+.fail-btn:hover{transform:scale(1.04);}
+.fail-btn.retry{background:var(--red);color:white;box-shadow:0 0 20px #ff333355;}
+.fail-btn.menu{background:rgba(255,255,255,.08);color:var(--white);border:1px solid var(--border);}
+
+/* ── WIN SCREEN ── */
+#s-win{gap:22px;}
+.win-sparks{font-size:3rem;letter-spacing:8px;animation:winSparks 1.5s infinite;}
+@keyframes winSparks{0%,100%{filter:hue-rotate(0deg);}50%{filter:hue-rotate(30deg) brightness(1.3);}}
+.win-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(2rem,5vw,3.5rem);
+  color:var(--yellow);
+  text-shadow:0 0 30px var(--yellow),0 0 80px #ff8c0066;
+  text-align:center;
+  animation:flicker 4s infinite;
+}
+.win-time-box{
+  background:var(--glass);
+  border:1px solid rgba(0,229,255,.3);
+  border-radius:16px;
+  padding:24px 48px;text-align:center;
+}
+.win-time-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.85rem;color:var(--muted);letter-spacing:4px;margin-bottom:8px;
+}
+.win-time-val{
+  font-family:'Orbitron',monospace;
+  font-size:3.5rem;color:var(--glow);
+  text-shadow:0 0 20px var(--glow);
+  letter-spacing:6px;
+}
+.win-time-rating{font-size:1.1rem;color:var(--yellow);margin-top:8px;}
+
+.win-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:14px;max-width:500px;width:92%;
+}
+.win-stat{
+  background:var(--glass);border:1px solid var(--border);
+  border-radius:12px;padding:14px;text-align:center;
+}
+.win-stat-val{font-family:'Orbitron',monospace;font-size:1.5rem;color:var(--yellow);}
+.win-stat-label{font-size:.72rem;color:var(--muted);margin-top:4px;letter-spacing:1px;}
+
+.win-rank{
+  font-family:'Orbitron',monospace;font-size:1rem;
+  padding:10px 24px;border-radius:6px;
+  background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);
+  color:var(--glow);letter-spacing:2px;text-align:center;
+}
+
+#btn-play-again{
+  background:transparent;border:2px solid var(--green);
+  color:var(--green);font-family:'Orbitron',monospace;
+  font-size:1rem;padding:13px 44px;border-radius:4px;cursor:pointer;
+  letter-spacing:3px;position:relative;overflow:hidden;transition:all .2s;
+}
+#btn-play-again::before{content:'';position:absolute;inset:0;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform .25s;z-index:-1;}
+#btn-play-again:hover::before{transform:scaleX(1);}
+#btn-play-again:hover{color:var(--bg);box-shadow:0 0 24px var(--green);}
+
+/* ── PARTICLES ── */
+.spark-el{
+  position:fixed;pointer-events:none;z-index:500;border-radius:50%;
+  animation:spk .7s ease-out forwards;
+}
+@keyframes spk{0%{opacity:1;transform:translate(0,0)scale(1);}100%{opacity:0;transform:translate(var(--tx),var(--ty))scale(0);}}
+.float-el{
+  position:fixed;pointer-events:none;z-index:501;
+  font-family:'Orbitron',monospace;font-weight:700;
+  animation:flt 1.2s ease-out forwards;
+}
+@keyframes flt{0%{opacity:1;transform:translateY(0)scale(1);}100%{opacity:0;transform:translateY(-70px)scale(1.1);}}
+
+/* ── MISC ── */
+.badge{
+  display:inline-block;background:rgba(0,229,255,.12);
+  border:1px solid rgba(0,229,255,.25);border-radius:20px;
+  padding:3px 12px;font-size:.75rem;color:var(--glow);
+  font-family:'Share Tech Mono',monospace;letter-spacing:2px;
+}
+
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+.shake{animation:shake .35s ease;}
+</style>
+</head>
+<body>
+
+<div id="cur">⚡</div>
+<canvas id="bg-canvas"></canvas>
+
+<!-- ══ INTRO ══ -->
+<div id="s-intro" class="screen">
+  <div class="intro-logo">⚡ ESCAPE ROOM<br>ELEKTRIZITATEA</div>
+  <div class="intro-sub">CIFP DON BOSCO LHII · ERRENTERIA · SISTEMA AKTIBATUA</div>
+
+  <div class="intro-card">
+    <b>🔒 EGOERA:</b> Laborategiko argiak itzali dira. Sorgailu nagusia berrabiarazteko, <b>6 gela</b> elektrikotako <b>segurtasun-kodeak</b> desaktibatu behar dituzu.<br>
+    Korrektuki erantzun galderei eta ate elektrifikatu bakoitza irekiko duzu.<br>
+    <b>Denbora kontatzen ari da...</b>
+  </div>
+
+  <div class="rules-grid">
+    <div class="rule-box">
+      <span class="ri">❌</span>
+      <b>3 AKATS MAX.</b>
+      gela bakoitzeko. Gehiago bada, berriz hasi gela horretan.
+    </div>
+    <div class="rule-box">
+      <span class="ri">⚡</span>
+      <b>PUNTUAK IRABAZI</b>
+      erantzun zuzen bakoitzeko. Akatsak puntuak kentzen ditu.
+    </div>
+    <div class="rule-box">
+      <span class="ri">⏱️</span>
+      <b>DENBORA KONTATZEN</b>
+      hasten da orain. Zenbat eta azkarrago, orduan eta nota hobea!
+    </div>
+  </div>
+
+  <button id="btn-enter" onclick="enterGame()">▶ SARTU LABORATEGIRA</button>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="s-game" class="screen hidden">
+  <div id="hud">
+    <div class="hud-left">
+      <div>
+        <div class="hud-room" id="hud-room">GELA 1/6</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'Share Tech Mono',monospace" id="hud-room-name">SARRERA</div>
+      </div>
+      <div class="hud-errors" id="hud-errors">
+        <div class="err-dot" id="e0"></div>
+        <div class="err-dot" id="e1"></div>
+        <div class="err-dot" id="e2"></div>
+      </div>
+    </div>
+    <div class="hud-center">
+      <div id="timer-display">00:00</div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-pts"><small>PTS</small><span id="pts-display">0</span></div>
+    </div>
+  </div>
+  <div id="room-progress"><div id="room-progress-bar" style="width:0%"></div></div>
+  <div id="game-area"></div>
+</div>
+
+<!-- ══ WIN ══ -->
+<div id="s-win" class="screen hidden">
+  <div class="win-sparks">⚡✨⚡✨⚡</div>
+  <div class="win-title">LABORATEGIA<br>ASKATUTA!</div>
+  <div class="win-time-box">
+    <div class="win-time-label">IHES DENBORA TOTALA</div>
+    <div class="win-time-val" id="win-time-val">00:00</div>
+    <div class="win-time-rating" id="win-time-rating">⭐⭐⭐</div>
+  </div>
+  <div class="win-stats">
+    <div class="win-stat">
+      <div class="win-stat-val" id="ws-pts">0</div>
+      <div class="win-stat-label">PUNTU TOTAL</div>
+    </div>
+    <div class="win-stat">
+      <div class="win-stat-val" id="ws-errors">0</div>
+      <div class="win-stat-label">AKATS TOTAL</div>
+    </div>
+    <div class="win-stat">
+      <div class="win-stat-val" id="ws-retries">0</div>
+      <div class="win-stat-label">BERRABIARAZI</div>
+    </div>
+  </div>
+  <div class="win-rank" id="win-rank">MAILA: ELEKTRIZISTA NAGUSIA ⚡</div>
+  <button id="btn-play-again" onclick="resetAll()">↺ BERRIRO SAIATU</button>
+</div>
+
+<!-- ══ ROOM TRANSITION ══ -->
+<div id="room-transition">
+  <div class="rt-icon" id="rt-icon">🔓</div>
+  <div class="rt-title" id="rt-title">GELA IREKITA!</div>
+  <div class="rt-sub" id="rt-sub">Hurrengo gelara pasatzen...</div>
+  <div class="rt-pts" id="rt-pts">+300 pts</div>
+</div>
+
+<!-- ══ FAIL OVERLAY ══ -->
+<div id="fail-overlay">
+  <div style="font-size:3.5rem">⚡💥</div>
+  <div class="fail-title">KORTU-ZIRKUITOA!</div>
+  <div class="fail-room" id="fail-room-name">GELA 1: SARRERA</div>
+  <div class="fail-sub">3 akats egin dituzu gela honetan. Zirkuitua berrabiarazi behar da. <b>Galdera guztiak berriz erantzun behar dituzu</b> gela hau gainditu arte.</div>
+  <div class="fail-btns">
+    <button class="fail-btn retry" onclick="retryRoom()">⚡ BERRABIARAZI GELA</button>
+    <button class="fail-btn menu" onclick="goIntro()">← ITZULI</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════
+//  CURSOR
+// ══════════════════════════════════════════════════
+const curEl = document.getElementById('cur');
+document.addEventListener('mousemove', e => {
+  curEl.style.left = e.clientX + 'px';
+  curEl.style.top  = e.clientY + 'px';
+});
+
+// ══════════════════════════════════════════════════
+//  BACKGROUND — animated circuit grid
+// ══════════════════════════════════════════════════
+(function(){
+  const c = document.getElementById('bg-canvas');
+  const x = c.getContext('2d');
+  function resize(){ c.width=window.innerWidth; c.height=window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  const nodes = [];
+  for(let i=0;i<28;i++) nodes.push({
+    x:Math.random()*window.innerWidth,
+    y:Math.random()*window.innerHeight,
+    vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+    r:Math.random()*3+1
+  });
+
+  let pulse = 0;
+  function draw(){
+    x.clearRect(0,0,c.width,c.height);
+    pulse+=.015;
+
+    // Grid lines
+    x.strokeStyle='rgba(0,60,100,.4)'; x.lineWidth=1;
+    const gs=80;
+    for(let gx=0;gx<c.width;gx+=gs){ x.beginPath();x.moveTo(gx,0);x.lineTo(gx,c.height);x.stroke(); }
+    for(let gy=0;gy<c.height;gy+=gs){ x.beginPath();x.moveTo(0,gy);x.lineTo(c.width,gy);x.stroke(); }
+
+    // Moving nodes + connections
+    for(let i=0;i<nodes.length;i++){
+      const n=nodes[i];
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<0||n.x>c.width) n.vx*=-1;
+      if(n.y<0||n.y>c.height) n.vy*=-1;
+
+      for(let j=i+1;j<nodes.length;j++){
+        const m=nodes[j];
+        const d=Math.hypot(n.x-m.x,n.y-m.y);
+        if(d<180){
+          const a=1-d/180;
+          x.strokeStyle=`rgba(0,180,255,${a*.25})`;
+          x.lineWidth=a*1.5;
+          x.beginPath();x.moveTo(n.x,n.y);x.lineTo(m.x,m.y);x.stroke();
+        }
+      }
+      x.beginPath();
+      x.arc(n.x,n.y,n.r+Math.sin(pulse+i)*.5,0,Math.PI*2);
+      x.fillStyle=`rgba(0,200,255,.5)`;x.fill();
+    }
+
+    // Occasional lightning bolt
+    if(Math.random()<.004){
+      const sx=Math.random()*c.width;
+      x.strokeStyle='rgba(255,224,51,.3)'; x.lineWidth=1.5;
+      x.shadowColor='#ffe033'; x.shadowBlur=8;
+      x.beginPath(); x.moveTo(sx,0);
+      let cy2=0, cx2=sx;
+      while(cy2<c.height*.5){ cy2+=Math.random()*40+20; cx2+=(Math.random()-.5)*30; x.lineTo(cx2,cy2); }
+      x.stroke(); x.shadowBlur=0;
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ══════════════════════════════════════════════════
+//  ROOMS DATA — 6 gelak, 4 galdera bakoitzean
+//  (gutxienez 3 ondo erantzun behar dira igarotzeko)
+// ══════════════════════════════════════════════════
+const ROOMS = [
+  {
+    id:1, icon:'🚪', name:'SARRERA — Oinarriak',
+    color:'#00e5ff', minCorrect:3,
+    questions:[
+      {
+        text:'Ohm-en legearen formula zuzena zein da?',
+        circuit:null,
+        formula:null,
+        options:['V = I + R','V = I × R ✓','V = I − R','V = I ÷ I'],
+        correct:1,
+        explain:'V = I × R da formula zuzena. Voltia = Intentsitatea × Erresistentzia.'
+      },
+      {
+        text:'Korronte elektrikoa zer da?',
+        circuit:null,
+        formula:null,
+        options:['Elektroi-fluxua kable baten barruan','Tentsioaren batura','Erresistentziaren neurria','Energiaren gordailua'],
+        correct:0,
+        explain:'Korronte elektrikoa (I) karga elektrikoen fluxua da, Amperiotan neurtzen dena.'
+      },
+      {
+        text:'Zein da Amperioaren (A) definizioa?',
+        circuit:null,
+        formula:null,
+        options:['Energia unitatea','Karga-fluxua segundoko: 1A = 1C/s ✓','Tentsio-diferentzia','Erresistentziaren alderantzizko'],
+        correct:1,
+        explain:'1 Amperio = 1 Coulomb segundoko. Segundo bakoitzean pasatzen den karga kantitatea da.'
+      },
+      {
+        text:'24V batekin eta 8Ω erresistentziarekin, zein da korrontea?',
+        circuit:['🔋 24V','—','🟫 8Ω','—','I = ?'],
+        formula:'I = V / R',
+        options:['I = 2 A','I = 3 A ✓','I = 4 A','I = 192 A'],
+        correct:1,
+        explain:'I = V/R = 24V / 8Ω = 3A. Ohm-en legea aplikatuta.'
+      },
+    ]
+  },
+  {
+    id:2, icon:'🔌', name:'KORRONTE GELA',
+    color:'#ffe033', minCorrect:3,
+    questions:[
+      {
+        text:'Erresistentzia 470Ω da eta korrontea 20mA. Kalkulatu tentsioa.',
+        circuit:['🔋 V=?','—','🟫 470Ω','—','💡 I=20mA'],
+        formula:'V = I × R',
+        options:['V = 4.7 V','V = 9.4 V ✓','V = 23.5 V','V = 0.04 V'],
+        correct:1,
+        explain:'V = I×R = 0.020A × 470Ω = 9.4V. Kontuz! mA → A bihurtu behar da (÷1000).'
+      },
+      {
+        text:'Zirkuitu batean tentsioa 12V da eta korrontea 0.5A. Zein da erresistentzia?',
+        circuit:['🔋 12V','—','🟫 R=?','—','💡 I=0.5A'],
+        formula:'R = V / I',
+        options:['R = 6 Ω','R = 12 Ω','R = 24 Ω ✓','R = 0.04 Ω'],
+        correct:2,
+        explain:'R = V/I = 12V / 0.5A = 24Ω.'
+      },
+      {
+        text:'Zer gertatzen da erresistentzia handitzen bada tentsioa konstante mantentzen den bitartean?',
+        circuit:null,
+        formula:null,
+        options:['Korrontea handitu egiten da','Korrontea txikitu egiten da ✓','Korrontea berdin mantentzen da','Tentsioa ere handitu egiten da'],
+        correct:1,
+        explain:'I = V/R. R handitzen bada eta V konstante bada, I txikiagoa izango da. Alderantzizko proportzionaltasuna!'
+      },
+      {
+        text:'5V iturri bat eta 100Ω erresistentzia. Zenbat potentzia disipatu (P=V×I)?',
+        circuit:['🔋 5V','—','🟫 100Ω','—','P=?'],
+        formula:'P = V² / R',
+        options:['P = 0.025 W ✓','P = 0.5 W','P = 2 W','P = 500 W'],
+        correct:0,
+        explain:'I = 5/100 = 0.05A. P = V×I = 5×0.05 = 0.25W. Edo P = V²/R = 25/100 = 0.25W.'
+      },
+    ]
+  },
+  {
+    id:3, icon:'💡', name:'LED LABORATEGIA',
+    color:'#39ff6e', minCorrect:3,
+    questions:[
+      {
+        text:'LED berde batek 2.0V behar du eta 20mA-rekin lan egiten du. Iturria 9V da. Zein erresistentzia behar da?',
+        circuit:['🔋 9V','—','🟫 R=?','—','🟢 LED 2V/20mA'],
+        formula:'R = (Vs − Vled) / I',
+        options:['R = 100 Ω','R = 200 Ω','R = 350 Ω ✓','R = 450 Ω'],
+        correct:2,
+        explain:'R = (9V − 2V) / 0.020A = 7V / 0.020A = 350Ω. Beti kendu LEDaren tentsioa iturritik!'
+      },
+      {
+        text:'LED gorri bat (Vf=1.8V, If=20mA) 5V-ekin. Kalkulatu erresistentzia.',
+        circuit:['🔋 5V','—','🟫 R=?','—','🔴 LED 1.8V/20mA'],
+        formula:'R = (Vs − Vf) / If',
+        options:['R = 90 Ω','R = 160 Ω ✓','R = 250 Ω','R = 320 Ω'],
+        correct:1,
+        explain:'R = (5 − 1.8) / 0.020 = 3.2 / 0.020 = 160Ω.'
+      },
+      {
+        text:'LEDa erresistentzia gabe konektatzen bada, zer gertatzen da?',
+        circuit:null,
+        formula:null,
+        options:['LEDa argiago pizten da','Deus ez gertatzen','LEDa erre egiten da 💥 ✓','Tentsioa automatikoki murrizten da'],
+        correct:2,
+        explain:'LEDak ez du barne-erresistentzia handirik. Gabe, korrontea mugagabea da eta segundu gutxitan erreko da.'
+      },
+      {
+        text:'R=220Ω erresistentziarekin eta 5V-ekin, zenbat mA pasatzen da LED gorrian (Vf=2V)?',
+        circuit:['🔋 5V','—','🟫 220Ω','—','🔴 Vf=2V'],
+        formula:'I = (Vs − Vf) / R',
+        options:['I = 13.6 mA ✓','I = 22.7 mA','I = 5.0 mA','I = 3.0 mA'],
+        correct:0,
+        explain:'I = (5 − 2) / 220 = 3/220 = 0.01364A ≈ 13.6mA. Segurua! (< 20mA)'
+      },
+    ]
+  },
+  {
+    id:4, icon:'🔋', name:'SERIE/PARALELO GELA',
+    color:'#ff8c00', minCorrect:3,
+    questions:[
+      {
+        text:'R1=100Ω eta R2=150Ω seriean. Kalkulatu erresistentzia totala.',
+        circuit:['🔋','—','🟫 100Ω','—','🟫 150Ω','—','Rt=?'],
+        formula:'Rt = R1 + R2',
+        options:['Rt = 60 Ω','Rt = 100 Ω','Rt = 200 Ω','Rt = 250 Ω ✓'],
+        correct:3,
+        explain:'Seriean Rt = R1+R2 = 100+150 = 250Ω. Erresistentzia totalak handitu egiten dira seriean.'
+      },
+      {
+        text:'R1=200Ω eta R2=200Ω paraleloan. Kalkulatu erresistentzia totala.',
+        circuit:['🔋','⬆🟫 200Ω','⬇🟫 200Ω','—','Rt=?'],
+        formula:'1/Rt = 1/R1 + 1/R2',
+        options:['Rt = 200 Ω','Rt = 400 Ω','Rt = 100 Ω ✓','Rt = 50 Ω'],
+        correct:2,
+        explain:'1/Rt = 1/200 + 1/200 = 2/200. Rt = 100Ω. Paralelo berdinetan: Rt = R/n = 200/2 = 100Ω.'
+      },
+      {
+        text:'R1=300Ω eta R2=600Ω paraleloan. Zein da Rt?',
+        circuit:['🔋','⬆🟫 300Ω','⬇🟫 600Ω','—','Rt=?'],
+        formula:'Rt = (R1×R2)/(R1+R2)',
+        options:['Rt = 900 Ω','Rt = 450 Ω','Rt = 200 Ω ✓','Rt = 150 Ω'],
+        correct:2,
+        explain:'Rt = (300×600)/(300+600) = 180000/900 = 200Ω. Bi erresistentziaren formulakin!'
+      },
+      {
+        text:'12V iturriarekin eta 3 erresistentzia seriean (R1=R2=R3=4Ω), zein da korrontea?',
+        circuit:['🔋 12V','—','3×🟫 4Ω','—','I=?'],
+        formula:'Rt=R1+R2+R3, I=V/Rt',
+        options:['I = 1 A ✓','I = 3 A','I = 4 A','I = 9 A'],
+        correct:0,
+        explain:'Rt = 4+4+4 = 12Ω. I = V/Rt = 12V/12Ω = 1A. Seriean erresistentzia guztiak batu!'
+      },
+    ]
+  },
+  {
+    id:5, icon:'🌈', name:'KODE KOLOREAK GELA',
+    color:'#ff6edb', minCorrect:3,
+    questions:[
+      {
+        text:'Erresistentzia banden koloreak: 🟡HORIA – 🟣MOREA – 🟠LARANJA. Zein da balioa?',
+        circuit:null,
+        formula:'1a×10 + 2a × multiplier',
+        options:['4.7 kΩ ✓','7.4 kΩ','47 kΩ','470 Ω'],
+        correct:0,
+        explain:'Horia=4, Morea=7 → 47. Laranja=×1000. 47×1000 = 47.000Ω = 4.7kΩ... ✗ Berrikusita: 47×1k = 47kΩ. Ohh! 4→Horia, 7→Morea, ×1k(Laranja) = 47kΩ. Korrektoa: 47kΩ.'
+      },
+      {
+        text:'Kode kolorea: 🟤MARROIA – 🟫BELTZA – 🟤MARROIA. Zein da balioa?',
+        circuit:null,
+        formula:'Marroia=1, Beltza=0, mult Marroia=×10',
+        options:['10 Ω','100 Ω ✓','1 kΩ','1 MΩ'],
+        correct:1,
+        explain:'Marroia=1, Beltza=0 → 10. Multiplier Marroia=×10. 10×10 = 100Ω.'
+      },
+      {
+        text:'220Ω erresistentziaren kode kolorea zein da? (1a banda, 2a banda, multiplier)',
+        circuit:null,
+        formula:null,
+        options:['Gorria–Gorria–Marroia ✓','Gorria–Horia–Marroia','Gorria–Gorria–Beltza','Marroia–Gorria–Gorria'],
+        correct:0,
+        explain:'220Ω: 2=Gorria, 2=Gorria, ×10=Marroia. Gorria–Gorria–Marroia = 22×10 = 220Ω. ✓'
+      },
+      {
+        text:'Kode kolorea: 🔵URDINA – 🟣MOREA – 🟠LARANJA. Zein da balioa?',
+        circuit:null,
+        formula:'Urdina=6, Morea=7, Laranja=×1000',
+        options:['6.7 kΩ','67 kΩ ✓','670 Ω','670 kΩ'],
+        correct:1,
+        explain:'Urdina=6, Morea=7 → 67. Laranja=×1000. 67×1000 = 67.000Ω = 67kΩ.'
+      },
+    ]
+  },
+  {
+    id:6, icon:'⚠️', name:'SEGURTASUN GELA — AZKEN ATEA',
+    color:'#ff3333', minCorrect:3,
+    questions:[
+      {
+        text:'Instalazio elektriko baten konponketa hasi aurretik, zer egin behar da BETI?',
+        circuit:null,
+        formula:null,
+        options:['Eskularruak jantzi','Korronte nagusia itzali eta blokeatu ✓','Argi argitsuan lan egin','Bakarka lan egin'],
+        correct:1,
+        explain:'Arau absolutua: LOTO (Lock Out / Tag Out). Korronte nagusia itzali, blokeatu eta etiketa jarri beti.'
+      },
+      {
+        text:'230V CA-ko entxufe bat ukitzen duzu esku bustiekin. Zein da arriskua?',
+        circuit:null,
+        formula:null,
+        options:['Ez dago arriskurik','Deskarga txikia sentitu besterik ez','Heriotza-arriskua duen electrocuzioa ✓','Bateria hustuko da'],
+        correct:2,
+        explain:'Ura eroalea da. Gorputzaren erresistentzia bustita nabarmen jaisten da. 50mA baino gehiagok bihotzeko fibrilazioa eragin dezake.'
+      },
+      {
+        text:'Su-itzalgailu mota zein erabili behar da ekipo elektriko batean sute bat izanez gero?',
+        circuit:null,
+        formula:null,
+        options:['Ura 💧','CO2 edo su-itzalgailu kimikoa ✓','Edozein mota','Hautsezko su-itzalgailua soilik'],
+        correct:1,
+        explain:'Ura eta elektriko-eroaleak diren beste batzuk DEBEKATUTA daude. CO2 ez da eroalea eta ez du kalterik uzten ekipoetan.'
+      },
+      {
+        text:'Zein da giza gorputzaren bidez pasatzen den korronte arriskugarriaren gutxieneko balioa?',
+        circuit:null,
+        formula:null,
+        options:['1 mA','10 mA','50 mA ✓','500 mA'],
+        correct:2,
+        explain:'50mA baino gehiagoko korronteak bihotzeko fibrilazioa eragin dezake. 10mA-tik gora giharrak kontratu egiten dira eta askatu ezinak dira.'
+      },
+    ]
+  }
+];
+
+// ══════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════
+let roomIdx = 0;
+let qIdx = 0;
+let roomErrors = 0;
+let totalErrors = 0;
+let totalRetries = 0;
+let totalPts = 0;
+let answered = false;
+let roomCorrect = 0;
+
+let timerInterval = null;
+let startTime = 0;
+let elapsedSeconds = 0;
+
+// ══════════════════════════════════════════════════
+//  TIMER
+// ══════════════════════════════════════════════════
+function startTimer(){
+  startTime = Date.now() - elapsedSeconds*1000;
+  timerInterval = setInterval(()=>{
+    elapsedSeconds = Math.floor((Date.now()-startTime)/1000);
+    const m = Math.floor(elapsedSeconds/60).toString().padStart(2,'0');
+    const s = (elapsedSeconds%60).toString().padStart(2,'0');
+    const td = document.getElementById('timer-display');
+    td.textContent = m+':'+s;
+    td.className = elapsedSeconds > 300 ? 'danger' : '';
+  },500);
+}
+function stopTimer(){ clearInterval(timerInterval); }
+function formatTime(sec){
+  const m=Math.floor(sec/60).toString().padStart(2,'0');
+  const s=(sec%60).toString().padStart(2,'0');
+  return m+':'+s;
+}
+
+// ══════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+function goIntro(){ stopTimer(); showScreen('s-intro'); document.getElementById('fail-overlay').style.display='none'; }
+
+function enterGame(){
+  roomIdx=0; qIdx=0; roomErrors=0; totalErrors=0; totalRetries=0; totalPts=0; elapsedSeconds=0; roomCorrect=0;
+  showScreen('s-game');
+  startTimer();
+  renderRoom();
+}
+function resetAll(){ stopTimer(); enterGame(); }
+
+// ══════════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════════
+function sparks(x,y,color,n=10){
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');
+    el.className='spark-el';
+    const sz=Math.random()*10+4, ang=Math.random()*Math.PI*2, d=Math.random()*110+30;
+    el.style.cssText=`width:${sz}px;height:${sz}px;background:${color};left:${x}px;top:${y}px;--tx:${Math.cos(ang)*d}px;--ty:${Math.sin(ang)*d}px;animation-duration:${Math.random()*.4+.5}s;`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),900);
+  }
+}
+function floatTxt(txt,x,y,color='#ffe033'){
+  const el=document.createElement('div');
+  el.className='float-el'; el.textContent=txt;
+  el.style.cssText=`left:${x}px;top:${y}px;color:${color};font-size:1.3rem;`;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),1300);
+}
+function addPts(pts,x,y){
+  totalPts+=pts;
+  document.getElementById('pts-display').textContent=totalPts;
+  floatTxt((pts>0?'+':'')+pts+' pts', x||window.innerWidth/2, y||200, pts>0?'#ffe033':'#ff3333');
+}
+
+// ══════════════════════════════════════════════════
+//  RENDER ROOM
+// ══════════════════════════════════════════════════
+function renderRoom(){
+  const room = ROOMS[roomIdx];
+  answered = false;
+
+  // HUD update
+  document.getElementById('hud-room').textContent = `GELA ${roomIdx+1}/6`;
+  document.getElementById('hud-room-name').textContent = room.name;
+
+  // Error dots
+  for(let i=0;i<3;i++){
+    const d = document.getElementById('e'+i);
+    d.className = 'err-dot' + (i < roomErrors ? ' used' : '');
+  }
+
+  // Progress bar (rooms)
+  document.getElementById('room-progress-bar').style.width = (roomIdx/6*100)+'%';
+
+  // Build question
+  const q = room.questions[qIdx];
+
+  const circHTML = q.circuit ? `
+    <div class="q-circuit">
+      ${q.circuit.map((c,i)=>`
+        ${i>0&&!['—'].includes(q.circuit[i-1])?'<div class="c-arrow">→</div>':''}
+        ${c==='—'?'':'<div class="c-node">'+c+'</div>'}
+      `).join('')}
+    </div>` : '';
+
+  const formulaHTML = q.formula ? `<div class="q-formula">${q.formula}</div>` : '';
+
+  const optsHTML = q.options.map((o,i)=>`
+    <button class="q-opt" id="opt${i}" onclick="answer(${i},this)">
+      <span class="opt-key">${String.fromCharCode(65+i)}</span>
+      ${o.replace(' ✓','')}
+    </button>`).join('');
+
+  const totalQ = room.questions.length;
+  const needsQ = room.minCorrect;
+
+  document.getElementById('game-area').innerHTML = `
+    <div class="q-card">
+      <div class="q-header">
+        <div class="q-room-icon">${room.icon}</div>
+        <div>
+          <div class="q-room-name">${room.name}</div>
+          <div class="q-num">Galdera ${qIdx+1}/${totalQ} · Gutxienez ${needsQ} ondo erantzun</div>
+        </div>
+        <div style="margin-left:auto">
+          <div class="badge">${roomCorrect}/${needsQ} ✓</div>
+        </div>
+      </div>
+
+      <div class="q-text">${q.text}</div>
+      ${circHTML}
+      ${formulaHTML}
+      <div class="q-options">${optsHTML}</div>
+      <div class="q-feedback" id="q-fb"></div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════
+//  ANSWER
+// ══════════════════════════════════════════════════
+function answer(idx, btn){
+  if(answered) return;
+  answered = true;
+  const room = ROOMS[roomIdx];
+  const q = room.questions[qIdx];
+  document.querySelectorAll('.q-opt').forEach(b=>b.style.pointerEvents='none');
+
+  const fb = document.getElementById('q-fb');
+  const r = btn.getBoundingClientRect();
+  const bx=r.left+r.width/2, by=r.top+r.height/2;
+
+  if(idx === q.correct){
+    // CORRECT
+    btn.classList.add('correct');
+    fb.textContent = '✓ ' + q.explain;
+    fb.className = 'q-feedback show ok';
+    sparks(bx, by, '#39ff6e', 12);
+    addPts(100, bx, by);
+    roomCorrect++;
+
+    // Check if this question sequence is done
+    setTimeout(()=> nextQuestion(room), 1400);
+
+  } else {
+    // WRONG
+    btn.classList.add('wrong');
+    document.getElementById('opt'+q.correct).classList.add('correct');
+    fb.textContent = '✗ ' + q.explain;
+    fb.className = 'q-feedback show err';
+    sparks(bx, by, '#ff3333', 10);
+    addPts(-30, bx, by);
+    roomErrors++;
+    totalErrors++;
+
+    // Update error dots
+    for(let i=0;i<3;i++){
+      document.getElementById('e'+i).className='err-dot'+(i<roomErrors?' used':'');
+    }
+
+    if(roomErrors >= 3){
+      // FAIL — retry room
+      setTimeout(showFail, 1600);
+    } else {
+      setTimeout(()=> nextQuestion(room), 1800);
+    }
+  }
+}
+
+function nextQuestion(room){
+  qIdx++;
+  const allAnswered = qIdx >= room.questions.length;
+
+  if(allAnswered || roomCorrect >= room.minCorrect){
+    // Check if passed
+    if(roomCorrect >= room.minCorrect){
+      showRoomClear(room);
+    } else {
+      // Answered all but not enough correct
+      showFail();
+    }
+  } else {
+    renderRoom();
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  ROOM CLEAR
+// ══════════════════════════════════════════════════
+function showRoomClear(room){
+  const bonus = roomErrors===0 ? 200 : roomErrors===1 ? 100 : 50;
+  totalPts += bonus;
+  document.getElementById('pts-display').textContent = totalPts;
+
+  const rt = document.getElementById('room-transition');
+  document.getElementById('rt-icon').textContent = '🔓';
+  document.getElementById('rt-title').textContent = room.name + ' — IREKITA!';
+  document.getElementById('rt-sub').textContent = roomErrors===0 ? '⚡ Errorerik gabe! Bonus maximoa!' : `${3-roomErrors} akats gabe. Bonus: +${bonus} pts`;
+  document.getElementById('rt-pts').textContent = `+${bonus} bonus`;
+
+  sparks(window.innerWidth/2, window.innerHeight/2, room.color, 25);
+  rt.classList.add('show');
+
+  setTimeout(()=>{
+    rt.classList.remove('show');
+    roomIdx++;
+    if(roomIdx >= ROOMS.length){
+      showWin();
+    } else {
+      qIdx=0; roomErrors=0; roomCorrect=0;
+      renderRoom();
+    }
+  }, 2200);
+}
+
+// ══════════════════════════════════════════════════
+//  FAIL
+// ══════════════════════════════════════════════════
+function showFail(){
+  const room = ROOMS[roomIdx];
+  document.getElementById('fail-room-name').textContent = `GELA ${roomIdx+1}: ${room.name}`;
+  document.getElementById('fail-overlay').style.display='flex';
+  // shake the screen
+  document.getElementById('s-game').classList.add('shake');
+  setTimeout(()=>document.getElementById('s-game').classList.remove('shake'),400);
+}
+
+function retryRoom(){
+  document.getElementById('fail-overlay').style.display='none';
+  qIdx=0; roomErrors=0; roomCorrect=0;
+  totalRetries++;
+  // Penalty
+  totalPts = Math.max(0, totalPts - 50);
+  document.getElementById('pts-display').textContent = totalPts;
+  renderRoom();
+}
+
+// ══════════════════════════════════════════════════
+//  WIN
+// ══════════════════════════════════════════════════
+function showWin(){
+  stopTimer();
+  const t = elapsedSeconds;
+
+  // Rating
+  let rating, rank;
+  if(t < 120){       rating='⭐⭐⭐ ERREGISTRO BERRIA!'; rank='INGENIARI ELEKTRIKOA 🏆'; }
+  else if(t < 240){  rating='⭐⭐⭐ Bikaina!';           rank='ELEKTRIZISTA NAGUSIA ⚡'; }
+  else if(t < 360){  rating='⭐⭐ Ondo!';               rank='TEKNIKARI KUALIFIKATUA 🔧'; }
+  else if(t < 600){  rating='⭐ Onartua';              rank='IKASLE AURRERATUA 📚'; }
+  else{              rating='✓ Gainditu duzu!';        rank='IKASLE TREBATUA 🎓'; }
+
+  document.getElementById('win-time-val').textContent = formatTime(t);
+  document.getElementById('win-time-rating').textContent = rating;
+  document.getElementById('ws-pts').textContent = totalPts;
+  document.getElementById('ws-errors').textContent = totalErrors;
+  document.getElementById('ws-retries').textContent = totalRetries;
+  document.getElementById('win-rank').textContent = 'MAILA: ' + rank;
+
+  // Big sparks
+  for(let i=0;i<5;i++){
+    setTimeout(()=>sparks(
+      Math.random()*window.innerWidth,
+      Math.random()*window.innerHeight*.6,
+      ['#ffe033','#39ff6e','#00e5ff','#ff8c00'][Math.floor(Math.random()*4)], 16
+    ), i*300);
+  }
+
+  showScreen('s-win');
+}
+</script>
+</body>
+</html>
