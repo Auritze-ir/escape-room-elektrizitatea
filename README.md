@@ -1,1 +1,1 @@
-# scape-room-elektrizitatea
+# escape-room-elektrizitatea
