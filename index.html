@@ -1095,7 +1095,7 @@ function showRoomClear(room){
   const rt = document.getElementById('room-transition');
   document.getElementById('rt-icon').textContent = '🔓';
   document.getElementById('rt-title').textContent = room.name + ' — IREKITA!';
-  document.getElementById('rt-sub').textContent = roomErrors===0 ? '⚡ Errorerik gabe! Bonus maximoa!' : `${3-roomErrors} akats gabe. Bonus: +${bonus} pts`;
+  document.getElementById('rt-sub').textContent = roomErrors===0 ? '⚡ Akatsik gabe! Bonus maximoa!' : `${3-roomErrors} akats gabe. Bonus: +${bonus} pts`;
   document.getElementById('rt-pts').textContent = `+${bonus} bonus`;
 
   sparks(window.innerWidth/2, window.innerHeight/2, room.color, 25);
@@ -1144,7 +1144,7 @@ function showWin(){
 
   // Rating
   let rating, rank;
-  if(t < 120){       rating='⭐⭐⭐ ERREGISTRO BERRIA!'; rank='INGENIARI ELEKTRIKOA 🏆'; }
+  if(t < 120){       rating='⭐⭐⭐ Txapelduna!'; rank='INGENIARI ELEKTRIKOA 🏆'; }
   else if(t < 240){  rating='⭐⭐⭐ Bikaina!';           rank='ELEKTRIZISTA NAGUSIA ⚡'; }
   else if(t < 360){  rating='⭐⭐ Ondo!';               rank='TEKNIKARI KUALIFIKATUA 🔧'; }
   else if(t < 600){  rating='⭐ Onartua';              rank='IKASLE AURRERATUA 📚'; }
