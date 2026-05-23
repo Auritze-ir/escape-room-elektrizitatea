@@ -847,7 +847,7 @@ const ROOMS = [
         explain:'Arau absolutua: LOTO (Lock Out / Tag Out). Korronte nagusia itzali, blokeatu eta etiketa jarri beti.'
       },
       {
-        text:'230V AC-ko entxufe bat ukitzen duzu esku bustiekin. Zein da arriskua?',
+        text:'230V CA-ko entxufe bat ukitzen duzu esku bustiekin. Zein da arriskua?',
         circuit:null,
         formula:null,
         options:['Ez dago arriskurik','Deskarga txikia sentitu besterik ez','Heriotza-arriskua duen elektrokuzioa ✓','Bateria hustuko da'],
@@ -972,8 +972,27 @@ function renderRoom(){
   // Progress bar (rooms)
   document.getElementById('room-progress-bar').style.width = (roomIdx/6*100)+'%';
 
-  // Build question
+  // Build question — options nahastu posizio aldatzeko
   const q = room.questions[qIdx];
+
+  // Sortu indize-array bat eta nahastu
+  const optIndices = q.options.map((_,i) => i);
+  for(let i = optIndices.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [optIndices[i], optIndices[j]] = [optIndices[j], optIndices[i]];
+  }
+  // Gorde erantzun zuzenaren posizio berria
+  const shuffledCorrect = optIndices.indexOf(q.correct);
+  answered = false;
+  // Gorde renderRoom-erako
+  room._shuffledCorrect = shuffledCorrect;
+  room._shuffledIndices = optIndices;
+
+  const optsHTML = optIndices.map((origIdx, newPos) => `
+    <button class="q-opt" id="opt${newPos}" onclick="answer(${newPos},this)">
+      <span class="opt-key">${String.fromCharCode(65+newPos)}</span>
+      ${q.options[origIdx].replace(' ✓','')}
+    </button>`).join('');
 
   const circHTML = q.circuit ? `
     <div class="q-circuit">
@@ -984,12 +1003,6 @@ function renderRoom(){
     </div>` : '';
 
   const formulaHTML = q.formula ? `<div class="q-formula">${q.formula}</div>` : '';
-
-  const optsHTML = q.options.map((o,i)=>`
-    <button class="q-opt" id="opt${i}" onclick="answer(${i},this)">
-      <span class="opt-key">${String.fromCharCode(65+i)}</span>
-      ${o.replace(' ✓','')}
-    </button>`).join('');
 
   const totalQ = room.questions.length;
   const needsQ = room.minCorrect;
@@ -1023,14 +1036,15 @@ function answer(idx, btn){
   if(answered) return;
   answered = true;
   const room = ROOMS[roomIdx];
-  const q = room.questions[qIdx];
+  const correctIdx = room._shuffledCorrect;
   document.querySelectorAll('.q-opt').forEach(b=>b.style.pointerEvents='none');
 
+  const q = room.questions[qIdx];
   const fb = document.getElementById('q-fb');
   const r = btn.getBoundingClientRect();
   const bx=r.left+r.width/2, by=r.top+r.height/2;
 
-  if(idx === q.correct){
+  if(idx === correctIdx){
     // CORRECT
     btn.classList.add('correct');
     fb.textContent = '✓ ' + q.explain;
@@ -1045,7 +1059,7 @@ function answer(idx, btn){
   } else {
     // WRONG
     btn.classList.add('wrong');
-    document.getElementById('opt'+q.correct).classList.add('correct');
+    document.getElementById('opt'+correctIdx).classList.add('correct');
     fb.textContent = '✗ ' + q.explain;
     fb.className = 'q-feedback show err';
     sparks(bx, by, '#ff3333', 10);
@@ -1053,13 +1067,12 @@ function answer(idx, btn){
     roomErrors++;
     totalErrors++;
 
-    // Update error dots
+    // Eguneratu error dots
     for(let i=0;i<3;i++){
       document.getElementById('e'+i).className='err-dot'+(i<roomErrors?' used':'');
     }
 
     if(roomErrors >= 3){
-      // FAIL — retry room
       setTimeout(showFail, 1600);
     } else {
       setTimeout(()=> nextQuestion(room), 1800);
@@ -1095,7 +1108,7 @@ function showRoomClear(room){
   const rt = document.getElementById('room-transition');
   document.getElementById('rt-icon').textContent = '🔓';
   document.getElementById('rt-title').textContent = room.name + ' — IREKITA!';
-  document.getElementById('rt-sub').textContent = roomErrors===0 ? '⚡ Akatsik gabe! Bonus maximoa!' : `${3-roomErrors} akats gabe. Bonus: +${bonus} pts`;
+  document.getElementById('rt-sub').textContent = roomErrors===0 ? '⚡ Errorerik gabe! Bonus maximoa!' : `${3-roomErrors} akats gabe. Bonus: +${bonus} pts`;
   document.getElementById('rt-pts').textContent = `+${bonus} bonus`;
 
   sparks(window.innerWidth/2, window.innerHeight/2, room.color, 25);
@@ -1144,7 +1157,7 @@ function showWin(){
 
   // Rating
   let rating, rank;
-  if(t < 120){       rating='⭐⭐⭐ Txapelduna!'; rank='INGENIARI ELEKTRIKOA 🏆'; }
+  if(t < 120){       rating='⭐⭐⭐ ERREGISTRO BERRIA!'; rank='INGENIARI ELEKTRIKOA 🏆'; }
   else if(t < 240){  rating='⭐⭐⭐ Bikaina!';           rank='ELEKTRIZISTA NAGUSIA ⚡'; }
   else if(t < 360){  rating='⭐⭐ Ondo!';               rank='TEKNIKARI KUALIFIKATUA 🔧'; }
   else if(t < 600){  rating='⭐ Onartua';              rank='IKASLE AURRERATUA 📚'; }
